@@ -105,10 +105,11 @@ underline() {
 
 # Documentation for usage.
 function usage() {
-  echo "usage: ${0} <get|set <on|off|brightness number|temperature number>"
+  echo "usage: ${0} <on|off|brightness number|temperature number>"
 }
 
 function main() {
+  # Get details
   local name
   ! name="$(get_elgato_name)" \
     && usage \
@@ -119,68 +120,62 @@ function main() {
     && usage \
     && return 1
 
-  case "${1}" in
-    get)
-      underline "${name} (${host_port})"
-      elgato_curl "${host_port}"
-      ;;
-    set)
-      # Evals local variables $on, $brightness, and $temperature from current
-      # settings.
-      eval "$(curl -s "http://${host_port}/elgato/lights" \
-          | jq -r '.lights[0] | keys[] as $l | "local \($l)=\(.[$l] | @sh)"')"
+  # Just print current settings if no changes are asked for.
+  if [[ "${#}" -eq 0 ]]; then
+    underline "${name} (${host_port})"
+    elgato_curl "${host_port}"
+    return 0
+  fi
 
-      # Override those values
-      shift 1
-      while [[ "${#}" -gt 0 ]]; do
-        case "${1}" in
-          on)
-            on=1
-            ;;
-          off)
-            on=0
-            ;;
+  # Evals local variables $on, $brightness, and $temperature from current
+  # settings.
+  eval "$(curl -s "http://${host_port}/elgato/lights" \
+      | jq -r '.lights[0] | keys[] as $l | "local \($l)=\(.[$l] | @sh)"')"
 
-          brightness)
-            ! brightness="$(parse_number_maybe_increment \
-                              "${brightness}" "0" "100" "${2}")" \
-              && usage \
-              && return 1
-            shift 1
-            ;;
+  # Override those values
+  while [[ "${#}" -gt 0 ]]; do
+    case "${1}" in
+      on)
+        on=1
+        ;;
+      off)
+        on=0
+        ;;
 
-          temperature)
-            ! temperature="$(parse_number_maybe_increment \
-                               "${temperature}" "143" "344" "${2}")" \
-              && usage \
-              && return 1
-            shift 1
-            ;;
-
-          *)
-            usage
-            return 1
-            ;;
-        esac
-
+      brightness)
+        ! brightness="$(parse_number_maybe_increment \
+                          "${brightness}" "0" "100" "${2}")" \
+          && usage \
+          && return 1
         shift 1
-      done
+        ;;
 
-      underline "${name} (${host_port})"
-      elgato_curl "${host_port}" \
-        --header 'Content-Type: application/json' \
-        --request PUT \
-        -d "{\"numberOfLights\":1,\"lights\":[{"`
-             `"\"on\":$on,"`
-             `"\"brightness\":$brightness,"`
-             `"\"temperature\":$temperature"`
-           `"}]}"
-      ;;
-    *)
-      usage
-      return 1
-      ;;
-  esac
+      temperature)
+        ! temperature="$(parse_number_maybe_increment \
+                            "${temperature}" "143" "344" "${2}")" \
+          && usage \
+          && return 1
+        shift 1
+        ;;
+
+      *)
+        usage
+        return 1
+        ;;
+    esac
+
+    shift 1
+  done
+
+  underline "${name} (${host_port})"
+  elgato_curl "${host_port}" \
+    --header 'Content-Type: application/json' \
+    --request PUT \
+    -d "{\"numberOfLights\":1,\"lights\":[{"`
+          `"\"on\":$on,"`
+          `"\"brightness\":$brightness,"`
+          `"\"temperature\":$temperature"`
+        `"}]}"
 }
 
 main "${@}"
