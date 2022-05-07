@@ -28,7 +28,7 @@ $ ./elgato.sh brightness 10
 ```
 
 ```bash
-$ ./elgato.sh brightness 25 temperature 300
+$ ./elgato.sh brightness 25
 ```
 
 ### Increment brightness / temperature
@@ -40,3 +40,19 @@ $ ./elgato.sh brightness +10
 ```bash
 $ ./elgato.sh temperature -15
 ```
+
+### Do multiple changes at once
+
+```bash
+$ ./elgato.sh brightness +10 temperature 200 on
+```
+
+### Last one wins
+
+Expect the light to be `on` and have `brightness` `15` (`20 - 5`), leaving
+temperature constant.
+
+```bash
+$ ./elgato.sh off on off on on brightness +5 brightness 20 brightness -5
+```
+
