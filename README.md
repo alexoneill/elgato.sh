@@ -13,8 +13,15 @@ usage: ./elgato.sh <on|off|brightness number|temperature number>
 
 ### Turn on / off the Key Light
 
+Example output is shown here, it is omitted in the rest for brevity.
+
 ```bash
 $ ./elgato.sh on
+My Key Light (my-key-light.local.:9123)
+=======================================
+brightness:   50
+on:           1
+temperature:  250
 ```
 
 ```bash
@@ -28,7 +35,7 @@ $ ./elgato.sh brightness 10
 ```
 
 ```bash
-$ ./elgato.sh brightness 25
+$ ./elgato.sh temperature 25
 ```
 
 ### Increment brightness / temperature
@@ -50,7 +57,7 @@ $ ./elgato.sh brightness +10 temperature 200 on
 ### Last one wins
 
 Expect the light to be `on` and have `brightness` `15` (`20 - 5`), leaving
-temperature constant.
+`temperature` constant.
 
 ```bash
 $ ./elgato.sh off on off on on brightness +5 brightness 20 brightness -5
