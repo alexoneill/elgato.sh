@@ -135,7 +135,7 @@ underline() {
 
 # Documentation for usage.
 function usage() {
-  echo "usage: ${0} <on|off|brightness number|temperature number>"
+  echo "usage: ${0} <on|off|toggle|brightness number|temperature number>"
 }
 
 function main() {
@@ -174,10 +174,13 @@ function main() {
   while [[ "${#}" -gt 0 ]]; do
     case "${1}" in
       on)
-        on=1
+        on="1"
         ;;
       off)
-        on=0
+        on="0"
+        ;;
+      toggle)
+        on="$((($on + 1) % 2))"
         ;;
 
       brightness)

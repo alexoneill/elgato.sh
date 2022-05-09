@@ -28,6 +28,12 @@ temperature:  250
 $ ./elgato.sh off
 ```
 
+Will swap the current state (`on` to `off` or vice versa):
+
+```bash
+$ ./elgato.sh toggle
+```
+
 ### Set brightness / temperature
 
 ```bash
@@ -57,9 +63,9 @@ $ ./elgato.sh brightness +10 temperature 200 on
 ### Last one wins
 
 Expect the light to be `on` and have `brightness` `15` (`20 - 5`), leaving
-`temperature` constant.
+`temperature` constant:
 
 ```bash
-$ ./elgato.sh off on off on on brightness +5 brightness 20 brightness -5
+$ ./elgato.sh off toggle toggle on brightness +5 brightness 20 brightness -5
 ```
 
