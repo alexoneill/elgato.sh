@@ -1,7 +1,7 @@
 #!/bin/bash
 
-# Query Bonjour for the first Elgato Key Light
-function get_elgato_name() {
+# MacOS: Query Bonjour for the first Elgato Key Light
+function macos_get_elgato_name() {
   # FIFO to interact with dns-sd
   local fifo='/tmp/discover-elgato.fifo'
   rm -f "${fifo}"
@@ -31,9 +31,9 @@ function get_elgato_name() {
   kill "${pid}"
 }
 
-# Given the name of an Elgato Key Light ($1), produce the host / port
+# MacOS: Given the name of an Elgato Key Light ($1), produce the host / port
 # information for that device.
-function get_elgato_host_port() {
+function macos_get_elgato_host_port() {
   # FIFO to interact with dns-sd
   local fifo='/tmp/discover-elgato.fifo'
   rm -f "${fifo}"
@@ -52,6 +52,36 @@ function get_elgato_host_port() {
 
     # Extract the information.
     sed -e 's/.* can be reached at \([^ ]*\) .*/\1/g' <<< "${hit}"
+    break
+  done < "${fifo}"
+
+  kill "${pid}"
+}
+
+# Linux: Return information about name / host and post about the first detected
+# ELgato Key Light, by way of generating variable assignments (to be evaluated
+# by the caller).
+function linux_get_elgato_details() {
+  # FIFO to interact with avahi-browse.
+  local fifo='/tmp/discover-elgato.fifo'
+  rm -f "${fifo}"
+  mkfifo "${fifo}"
+
+  # Query Bonjour.
+  avahi-browse -p --resolve _elg._tcp > "${fifo}" 2>/dev/null &
+  local pid="${!}"
+
+  # Find the first light.
+  while read line; do
+    # Find the light name.
+    [[ -z "${line}" ]] && continue
+    local hit;
+    hit="$(grep '^=;' <<< "${line}")" || continue
+
+    # Output variables and break out.
+    awk -F ';' '{
+      print "name='"'"'" $4 "'"'"';host_port='"'"'" $7 ":" $9 "'"'"'"
+    }' <<< "${line}" | sed -e "s@\\032@ @g"
     break
   done < "${fifo}"
 
@@ -111,14 +141,22 @@ function usage() {
 function main() {
   # Get details
   local name
-  ! name="$(get_elgato_name)" \
-    && usage \
-    && return 1
-
   local host_port
-  ! host_port="$(get_elgato_host_port "${name}")" \
-    && usage \
-    && return 1
+
+  local uname="$(uname)"
+  if [[ "${uname}" =~ ^Darwin ]]; then
+    ! name="$(macos_get_elgato_name)" \
+      && usage \
+      && return 1
+
+    ! host_port="$(macos_get_elgato_host_port "${name}")" \
+      && usage \
+      && return 1
+  else
+    ! eval "$(linux_get_elgato_details)" \
+      && usage \
+      && return 1
+  fi
 
   # Just print current settings if no changes are asked for.
   if [[ "${#}" -eq 0 ]]; then
